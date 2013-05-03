@@ -4,3 +4,14 @@
 *.jar
 *.war
 *.ear
+
+# Template for eclipse/idea maven projects #
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.iws
+.DS_Store
+log/
+*/target/*
