@@ -1,6 +1,5 @@
 package com.vthacker.luceneExamples;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
@@ -22,20 +21,18 @@ import org.apache.lucene.search.spell.TermFreqIterator;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
 
 public class Autosuggest {
   
-  private static final String FIELD = "title";
-  private static final String INDEX_DIR = "/tmp/lucene/";
-  private static final int RESULTS_TO_DISPLAY = 10;
+  public static final String FIELD = "title";
+  public static final String INDEX_DIR = "/tmp/lucene/";
+  public static final int RESULTS_TO_DISPLAY = 10;
   
-  private FuzzySuggester suggestor;
-
-  public void buildSuggestor() throws IOException {
-    
-    //Defining a custom analyzer which will be used to index and suggest the data set
+  private FuzzySuggester suggestor = new FuzzySuggester(Autosuggest.getAnalyzer());
+  
+  public static Analyzer getAnalyzer() {
+  //Defining a custom analyzer which will be used to index and suggest the data set
     Analyzer autosuggestAnalyzer = new Analyzer() {
       
       final String [] stopWords =  {"a", "an", "and", "are", "as", "at", "be", "but", "by",
@@ -57,20 +54,31 @@ public class Autosuggest {
         };
       }
     };
-    
+    return autosuggestAnalyzer;
+  }
 
-    Directory directory = new MMapDirectory(new File(Autosuggest.INDEX_DIR));
-    final IndexReader reader = DirectoryReader.open(directory);
-    AtomicReader aReader = SlowCompositeReaderWrapper.wrap(reader); // Should use reader.leaves instead ?
-    Terms terms = aReader.terms(Autosuggest.FIELD);
-    if (terms == null) return; // TODO show error message
-    
-    TermsEnum termEnum = terms.iterator(null);
-    TermFreqIterator wrapper = new TermFreqIterator.TermFreqIteratorWrapper(termEnum);
-    
-    suggestor = new FuzzySuggester(autosuggestAnalyzer);
-    suggestor.build(wrapper);
-    
+  public boolean buildSuggestor(Directory directory) {
+
+    IndexReader reader;
+    try {
+      
+      reader = DirectoryReader.open(directory);
+      AtomicReader aReader = SlowCompositeReaderWrapper.wrap(reader); // Should use reader.leaves instead ?
+      Terms terms = aReader.terms(Autosuggest.FIELD);
+      
+      if (terms == null) return false; 
+      
+      TermsEnum termEnum = terms.iterator(null);
+      TermFreqIterator wrapper = new TermFreqIterator.TermFreqIteratorWrapper(termEnum);
+      
+      suggestor.build(wrapper);
+      
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    }
+
+    return true;
   }
   
   public String[] suggest(String q) {
