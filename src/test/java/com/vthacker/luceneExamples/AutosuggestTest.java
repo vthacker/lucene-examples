@@ -56,7 +56,7 @@ public class AutosuggestTest extends TestCase {
     
     
     Autosuggest suggestor = new Autosuggest();
-    boolean success = suggestor.buildSuggestor(dir);
+    boolean success = suggestor.buildSuggestor(dir, Autosuggest.FIELD);
     if(success) {
       String[] results = suggestor.suggest("foo");
       assertEquals(2, results.length);

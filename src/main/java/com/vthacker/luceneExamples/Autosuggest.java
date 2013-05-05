@@ -1,5 +1,6 @@
 package com.vthacker.luceneExamples;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
@@ -21,6 +22,7 @@ import org.apache.lucene.search.spell.TermFreqIterator;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
 
 public class Autosuggest {
@@ -56,15 +58,48 @@ public class Autosuggest {
     };
     return autosuggestAnalyzer;
   }
+  
+  /**
+   * 
+   * @param indexDir Pass the directory where the index is made
+   * This uses the default field
+   * @return
+   */
+  public boolean buildSuggestor(String indexDir) {
+    try {
+      Directory dir = new MMapDirectory(new File(indexDir));
+      return buildSuggestor(dir, FIELD);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    }
+    
+  }
+  
+  /**
+   * 
+   * @param indexDir Pass the directory where the index is made
+   * @param fieldName Uses the field to build the index
+   * @return
+   */
+  public boolean buildSuggestor(String indexDir, String fieldName) {
+    try {
+      Directory dir = new MMapDirectory(new File(indexDir));
+      return buildSuggestor(dir, fieldName);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
 
-  public boolean buildSuggestor(Directory directory) {
+  public boolean buildSuggestor(Directory directory, String fieldName) {
 
     IndexReader reader;
     try {
       
       reader = DirectoryReader.open(directory);
       AtomicReader aReader = SlowCompositeReaderWrapper.wrap(reader); // Should use reader.leaves instead ?
-      Terms terms = aReader.terms(Autosuggest.FIELD);
+      Terms terms = aReader.terms(fieldName);
       
       if (terms == null) return false; 
       
